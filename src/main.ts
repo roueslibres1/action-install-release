@@ -3,6 +3,7 @@ import * as os from 'os'
 import * as tc from '@actions/tool-cache'
 
 import {Octokit} from '@octokit/action'
+import {RequestError} from '@octokit/request-error'
 
 async function run(): Promise<void> {
     const token = core.getInput('token')
@@ -33,11 +34,25 @@ async function run(): Promise<void> {
     }
     const octokit = new Octokit()
     let getReleaseUrl
-    if (tag === 'latest') {
-        getReleaseUrl = await octokit.repos.getLatestRelease({owner, repo})
-    } else {
-        getReleaseUrl = await octokit.repos.getReleaseByTag({owner, repo, tag})
+    try {
+        if (tag === 'latest') {
+            getReleaseUrl = await octokit.repos.getLatestRelease({owner, repo})
+        } else {
+            getReleaseUrl = await octokit.repos.getReleaseByTag({
+                owner,
+                repo,
+                tag
+            })
+        }
+    } catch (e) {
+        if (e instanceof RequestError) {
+            throw new Error(
+                `Could not find a release in repo: error for ${e.message}`
+            )
+        }
+        return
     }
+
     const re = new RegExp(`_${osPlatform}-${osArch}.zip`)
     const asset = getReleaseUrl.data.assets.find(obj => {
         core.info(`searching for ${obj.name} with ${re.source}`)

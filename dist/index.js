@@ -39,6 +39,7 @@ const core = __importStar(__nccwpck_require__(2186));
 const os = __importStar(__nccwpck_require__(2037));
 const tc = __importStar(__nccwpck_require__(7784));
 const action_1 = __nccwpck_require__(1231);
+const request_error_1 = __nccwpck_require__(537);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const token = core.getInput('token');
@@ -68,11 +69,23 @@ function run() {
         }
         const octokit = new action_1.Octokit();
         let getReleaseUrl;
-        if (tag === 'latest') {
-            getReleaseUrl = yield octokit.repos.getLatestRelease({ owner, repo });
+        try {
+            if (tag === 'latest') {
+                getReleaseUrl = yield octokit.repos.getLatestRelease({ owner, repo });
+            }
+            else {
+                getReleaseUrl = yield octokit.repos.getReleaseByTag({
+                    owner,
+                    repo,
+                    tag
+                });
+            }
         }
-        else {
-            getReleaseUrl = yield octokit.repos.getReleaseByTag({ owner, repo, tag });
+        catch (e) {
+            if (e instanceof request_error_1.RequestError) {
+                throw new Error(`Could not find a release in repo: error for ${e.message}`);
+            }
+            return;
         }
         const re = new RegExp(`_${osPlatform}-${osArch}.zip`);
         const asset = getReleaseUrl.data.assets.find(obj => {
