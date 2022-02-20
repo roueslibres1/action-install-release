@@ -1,0 +1,19 @@
+name: "Install GithubRelease action"
+description: " Installs Github release"
+inputs:
+  repo:
+    description: "GitHub repo where binary is located"
+    required: true
+  tag:
+    description: "tag containing binary to install"
+    default: latest
+    required: true
+  token: 
+    desription: "access token"
+    required: true
+branding:
+  icon: 'archive'
+  color: 'green'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
